@@ -1,18 +1,17 @@
 package net.prsv.rengine;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 import net.prsv.rengine.RToken.RTokenType;
 
 public class RegexParser {
 
+    private final String pattern;
     private static final Map<RTokenType, Integer> precedence;
 
     private static final Map<Character, RTokenType> specialChars;
+
+    private List<RToken> tokens = new ArrayList<>();
 
     static {
         Map<RTokenType, Integer> tokenPrecedenceMap = new HashMap<>();
@@ -33,15 +32,22 @@ public class RegexParser {
         specialCharMap.put('|', RTokenType.UNION);
         specialChars = Collections.unmodifiableMap(specialCharMap);
 
-    };
-
-    // do not instantiate
-    private RegexParser () {
     }
 
-    private static List<RToken> tokenize(String pattern) {
+    // do not instantiate
+    public RegexParser (String pattern) {
+        if (pattern == null) {
+            throw new IllegalArgumentException("Regex parser: pattern can't be null");
+        }
+        this.pattern = pattern;
+        tokenize();
+        inToPost();
+    }
 
-        List<RToken> tokens = new ArrayList<RToken>();
+    private void tokenize() {
+
+        ArrayList<RToken> tokenStream = new ArrayList<>();
+
         int position = 0;
 
         // go over the whole pattern and tokenize it
@@ -62,34 +68,67 @@ public class RegexParser {
                     }
                 // otherwise do nothing -- swallow the backslash
                 }
+            } else {
+                // if a special character -- create an operator token
+                // if not a special character -- create a literal token
+                token = new RToken(specialChars.getOrDefault(c, RTokenType.LITERAL), c);
             }
-
-            if (specialChars.containsKey(c)) { // special character - create an operator token
-                token = new RToken(specialChars.get(c), c);
-            } else { // not a special character -- create a literal token
-                token = new RToken(RTokenType.LITERAL, c);
-            }
-            tokens.add(token);
+            tokenStream.add(token);
             position = position + 1;
         }
 
-        // insert explicit concatenation tokens between literals
-        for (int i = 0; i < tokens.size(); i ++) {
-            RToken t = tokens.get(i);
-            if (t.type == RTokenType.LITERAL && i + 1 < tokens.size()) {
-                RToken t2 = tokens.get(i + 1);
-                if (t2.type == RTokenType.LITERAL) {
-                    tokens.add(i + 1, new RToken(RTokenType.CONCAT, '\u0000'));
+        // insert explicit concatenation tokens
+        for (int i = 0; i < tokenStream.size(); i++) {
+            RToken t = tokenStream.get(i);
+            tokens.add(t);
+            if (i + 1 < tokenStream.size()) {
+                RToken t2 = tokenStream.get(i + 1);
+                if (t.type != RTokenType.LPAR && t.type != RTokenType.UNION && t2.type == RTokenType.LITERAL) {
+                    tokens.add(new RToken(RTokenType.CONCAT, '.'));
                 }
             }
         }
-        return tokens;
     }
 
-    public static List<RToken> postfix(String pattern) {
-        List<RToken> tokens = tokenize(pattern);
-        
-        return null;
+    private void inToPost() {
+        Deque<RToken> stack = new ArrayDeque<>();
+        List<RToken> postfixStream = new ArrayList<>();
+
+        for (RToken t : tokens) {
+            switch (t.type) {
+                case LITERAL:
+                    postfixStream.add(t);
+                    break;
+                case LPAR:
+                    stack.push(t);
+                    break;
+                case RPAR:
+                    while (!stack.peek().type.equals(RTokenType.LPAR)) {
+                        postfixStream.add(stack.pop());
+                    }
+                    stack.pop();
+                    break;
+
+                default:
+                    while (stack.size() > 0) {
+                        RToken topToken = stack.peek();
+                        int topTokenPrecedence = precedence.get(topToken.type);
+                        int currentTokenPrecedence = precedence.get(t.type);
+                        if (topTokenPrecedence >= currentTokenPrecedence) {
+                            postfixStream.add(stack.pop());
+                        } else {
+                            break;
+                        }
+                    }
+                    stack.push(t);
+                    break;
+            }
+        }
+
+        while (stack.size() > 0) {
+            postfixStream.add(stack.pop());
+        }
+        tokens = postfixStream;
     }
 
 }
