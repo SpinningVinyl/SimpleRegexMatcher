@@ -131,5 +131,10 @@ public class RegexParser {
         tokens = postfixStream;
     }
 
+    public List<RToken> tokenStream() {
+        return tokens;
+    }
+
+
 }
 
