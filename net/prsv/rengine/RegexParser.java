@@ -103,7 +103,9 @@ public class RegexParser {
                     stack.push(t);
                     break;
                 case RPAR:
-                    while (!stack.peek().type.equals(RTokenType.LPAR)) {
+                    while (true) {
+                        assert stack.peek() != null;
+                        if (stack.peek().type.equals(RTokenType.LPAR)) break;
                         postfixStream.add(stack.pop());
                     }
                     stack.pop();
@@ -112,9 +114,7 @@ public class RegexParser {
                 default:
                     while (stack.size() > 0) {
                         RToken topToken = stack.peek();
-                        int topTokenPrecedence = precedence.get(topToken.type);
-                        int currentTokenPrecedence = precedence.get(t.type);
-                        if (topTokenPrecedence >= currentTokenPrecedence) {
+                        if (precedence.get(topToken.type) >= precedence.get(t.type)) {
                             postfixStream.add(stack.pop());
                         } else {
                             break;
