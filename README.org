@@ -13,6 +13,8 @@ It supports the following standard metacharacters:
 
 To use a metacharacter as a standard character, escape it with a ~\~ (backslash). For example, ~\?~ matches a literal question mark.
 
+This matcher is written as a proof of concept (or, more precisely, as a proof that I can write something like this from scratch), so it does not support more advanced features like character classes, backreferences and the ~.~ metacharacter that ordinarily matches any character.
+
 ** How does it work?
 It works by converting a regular expression into a non-deterministic finite automaton (or NFA).
 
