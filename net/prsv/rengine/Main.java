@@ -22,6 +22,10 @@ public class Main {
                 System.out.println("Bye!");
                 continue;
             }
+            if(input.trim().equalsIgnoreCase(":summary")) {
+                System.out.println(machine.summary());
+                continue;
+            }
             boolean accepted = machine.run(input);
             if (accepted) {
                 System.out.println("String '" + input + "' accepted.");
