@@ -5,15 +5,16 @@ This is exactly what it says on the tin —a Java implementation of a simple mat
 
 It supports the following standard metacharacters:
 
+- The period ~.~, which matches any character.
 - Kleene star ~*~, which means “zero or more of the preceding character/group”.
 - The ~+~ character, which means “one or more of the preceding character/group”.
 - The ~?~ character, which means “zero or one of the preceding character/group”.
 - The union operator ~|~, which means “either preceding or following character/group”.
 - Left and right parentheses ~(~ and ~)~, which are used for grouping the characters (in exactly the same way as in mathematical notation).
 
-To use a metacharacter as a standard character, escape it with a ~\~ (backslash). For example, ~\?~ matches a literal question mark.
+To use a metacharacter as a standard character, escape it with a ~\~ (backslash). For example, ~\?~ matches a literal question mark, and ~\.~ matches a literal full stop.
 
-This matcher is written as a proof of concept (or, more precisely, as a proof that I can write something like this from scratch), so it does not support more advanced features like character classes, backreferences and the ~.~ metacharacter that ordinarily matches any character.
+This matcher is written as a proof of concept (or, more precisely, as a proof that I can write something like this from scratch), so it does not support more advanced features like character classes and backreferences.
 
 ** How does it work?
 It works by converting a regular expression into a non-deterministic finite automaton (or NFA).
