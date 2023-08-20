@@ -4,6 +4,7 @@ public class RToken {
 
     public enum RTokenType {
         LITERAL,
+        ANY_CHAR,
         LPAR,
         RPAR,
         UNION,
