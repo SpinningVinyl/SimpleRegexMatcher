@@ -131,7 +131,7 @@ public class NFABuilder {
                     // push the resulting fragment onto the stack
                     stack.push(fragment);
                     break;
-                case Q:
+                case QMARK:
                 case STAR:
                     // pop a fragment from the stack
                     e = stack.pop();
@@ -148,7 +148,7 @@ public class NFABuilder {
 
                     // create a null transition from the accept state of e to the accept state or to the start state,
                     // depending on the token
-                    String patchState = (t.type == RToken.RTokenType.Q) ? acceptState : startState ;
+                    String patchState = (t.type == RToken.RTokenType.QMARK) ? acceptState : startState ;
                     if (!nullTransitions.containsKey(e.getAcceptState())) {
                         nullTransitions.put(e.getAcceptState(), new HashSet<>(Collections.singleton(patchState)));
                     } else {

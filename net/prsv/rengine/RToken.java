@@ -8,7 +8,7 @@ public class RToken {
         RPAR,
         UNION,
         CONCAT,
-        Q,
+        QMARK,
         STAR,
         PLUS
     }

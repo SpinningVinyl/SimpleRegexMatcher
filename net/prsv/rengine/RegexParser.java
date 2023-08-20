@@ -15,14 +15,14 @@ public class RegexParser {
         precedence.put(RTokenType.LPAR, 1);
         precedence.put(RTokenType.UNION, 2);
         precedence.put(RTokenType.CONCAT, 3);
-        precedence.put(RTokenType.Q, 4);
+        precedence.put(RTokenType.QMARK, 4);
         precedence.put(RTokenType.STAR, 4);
         precedence.put(RTokenType.PLUS, 4);
 
         // populate the special character map
         specialChars.put('(', RTokenType.LPAR);
         specialChars.put(')', RTokenType.RPAR);
-        specialChars.put('?', RTokenType.Q);
+        specialChars.put('?', RTokenType.QMARK);
         specialChars.put('*', RTokenType.STAR);
         specialChars.put('+', RTokenType.PLUS);
         specialChars.put('|', RTokenType.UNION);
