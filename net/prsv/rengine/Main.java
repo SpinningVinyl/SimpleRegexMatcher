@@ -9,9 +9,13 @@ public class Main {
 
     public static void setNewPattern() {
         Scanner s = new Scanner(System.in);
-        System.out.println("Enter the regular expression: ");
-        System.out.print("> ");
-        Main.pattern = s.nextLine();
+        String input = "";
+        while (input.isBlank()) {
+            System.out.println("Enter the regular expression: ");
+            System.out.print("> ");
+            input = s.nextLine();
+        }
+        Main.pattern = input;
         Main.machine = NFABuilder.build(RegexParser.infixToPostfix(RegexParser.tokenize(pattern)));
     }
 
@@ -23,7 +27,7 @@ public class Main {
         boolean quit = false;
 
         while(!quit) {
-            System.out.println("Current regex: " + pattern + "\nEnter the input string, or type ':QUIT' to exit: ");
+            System.out.println("Current regex: " + pattern + "\nEnter the input string, type ':regex' to set a new regex pattern, or ':quit' to exit: ");
             System.out.print("> ");
             String input = s.nextLine();
             if(input.trim().equalsIgnoreCase(":quit")) {
