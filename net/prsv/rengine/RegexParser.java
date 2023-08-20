@@ -26,6 +26,7 @@ public class RegexParser {
         specialChars.put('*', RTokenType.STAR);
         specialChars.put('+', RTokenType.PLUS);
         specialChars.put('|', RTokenType.UNION);
+        specialChars.put('.', RTokenType.ANY_CHAR);
     }
 
     // do not instantiate
@@ -77,7 +78,8 @@ public class RegexParser {
             tokens.add(t);
             if (i + 1 < temporaryTokenStream.size()) {
                 RToken t2 = temporaryTokenStream.get(i + 1);
-                if (t.type != RTokenType.LPAR && t.type != RTokenType.UNION && (t2.type == RTokenType.LITERAL || t2.type == RTokenType.LPAR)) {
+                if (t.type != RTokenType.LPAR && t.type != RTokenType.UNION
+                        && (t2.type == RTokenType.LITERAL || t2.type == RTokenType.LPAR || t2.type == RTokenType.ANY_CHAR)) {
                     tokens.add(new RToken(RTokenType.CONCAT, '&'));
                 }
             }
@@ -94,6 +96,7 @@ public class RegexParser {
         for (RToken t : tokens) {
             switch (t.type) {
                 case LITERAL:
+                case ANY_CHAR:
                     postfixStream.add(t);
                     break;
                 case LPAR:
