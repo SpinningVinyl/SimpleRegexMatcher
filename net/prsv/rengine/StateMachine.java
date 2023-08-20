@@ -8,18 +8,22 @@ public class StateMachine {
     private final HashSet<String> acceptStates;
     private final HashMap<Pair, HashSet<String>> transitions;
     private final HashMap<String, HashSet<String>> nullTransitions;
+
+    private final HashMap<String, String> anyCharTransitions;
+
     private final HashSet<String> startStates;
 
     public StateMachine(HashSet<String> states,
-                        HashSet<String> acceptStates,
+                        HashSet<String> startStates, HashSet<String> acceptStates,
                         HashMap<Pair, HashSet<String>> transitions,
                         HashMap<String, HashSet<String>> nullTransitions,
-                        HashSet<String> startStates) {
+                        HashMap<String, String> anyCharTransitions) {
         this.states = states;
         this.acceptStates = acceptStates;
         this.transitions = transitions;
         this.nullTransitions = nullTransitions;
         this.startStates = startStates;
+        this.anyCharTransitions = anyCharTransitions;
     }
 
     public String config() {
@@ -102,14 +106,19 @@ public class StateMachine {
                     if (states != null) {
                         newStates.addAll(states);
                     }
+                    if (anyCharTransitions.containsKey(state)) {
+                        newStates.add(anyCharTransitions.get(state));
+                    }
                 }
                 // if any of the current states have null transitions defined,
                 // add them to the current states recursively
+                HashSet<String> tmp = new HashSet<>();
                 for (String state : newStates) {
                     if (nullTransitions.containsKey(state)) {
-                        newStates.addAll(followNullTransitions(state));
+                        tmp.addAll(followNullTransitions(state));
                     }
                 }
+                newStates.addAll(tmp);
                 currentStates = newStates;
 //                System.out.print("Moving to states: ");
 //                newStates.forEach(state -> System.out.print(state + " "));

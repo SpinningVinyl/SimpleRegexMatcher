@@ -11,15 +11,18 @@ public class NFABuilder {
         private final HashMap<Pair, HashSet<String>> transitions;
         private final HashMap<String, HashSet<String>> nullTransitions;
 
+        private final HashMap<String, String> anyCharTransitions;
+
         public Fragment(HashSet<String> states,
-                            String acceptState,
-                            HashMap<Pair, HashSet<String>> transitions,
-                            HashMap<String, HashSet<String>> nullTransitions,
-                            String startState) {
+                        String startState, String acceptState,
+                        HashMap<Pair, HashSet<String>> transitions,
+                        HashMap<String, HashSet<String>> nullTransitions,
+                        HashMap<String, String> anyCharTransitions) {
             this.states = states;
             this.acceptState = acceptState;
             this.transitions = transitions;
             this.nullTransitions = nullTransitions;
+            this.anyCharTransitions = anyCharTransitions;
             this.startState = startState;
         }
 
@@ -42,6 +45,10 @@ public class NFABuilder {
         public HashMap<String, HashSet<String>> getNullTransitions() {
             return nullTransitions;
         }
+
+        public HashMap<String, String> getAnyCharTransitions() {
+            return anyCharTransitions;
+        }
     }
 
     public static StateMachine build(List<RToken> tokenStream) {
@@ -52,21 +59,28 @@ public class NFABuilder {
         String acceptState;
         HashMap<Pair, HashSet<String>> transitions;
         HashMap<String, HashSet<String>> nullTransitions;
+        HashMap<String, String> anyCharTransitions;
         Fragment fragment;
         Fragment e1, e2, e;
         for (RToken t : tokenStream) {
             states = new HashSet<>();
             transitions = new HashMap<>();
             nullTransitions = new HashMap<>();
+            anyCharTransitions = new HashMap<>();
             switch (t.type) {
+                case ANY_CHAR:
                 case LITERAL:
                     // create a new fragment which has two states and one transition
                     startState = "q" + stateCounter++;
                     acceptState = "q" + stateCounter++;
                     states.add(startState);
                     states.add(acceptState);
-                    transitions.put(new Pair(startState, t.literal), new HashSet<>(Collections.singleton(acceptState)));
-                    fragment = new Fragment(states, acceptState, transitions, nullTransitions, startState);
+                    if (t.type == RToken.RTokenType.LITERAL) {
+                        transitions.put(new Pair(startState, t.literal), new HashSet<>(Collections.singleton(acceptState)));
+                    } else {
+                        anyCharTransitions.put(startState, acceptState);
+                    }
+                    fragment = new Fragment(states, startState, acceptState, transitions, nullTransitions, anyCharTransitions);
                     // push the fragment onto the stack
                     stack.push(fragment);
                     break;
@@ -82,6 +96,8 @@ public class NFABuilder {
                     // transitions = all transitions from e1 and e2
                     transitions = e1.getTransitions();
                     transitions.putAll(e2.getTransitions());
+                    anyCharTransitions = e1.getAnyCharTransitions();
+                    anyCharTransitions.putAll(e2.getAnyCharTransitions());
                     nullTransitions = e1.getNullTransitions();
                     nullTransitions.putAll(e2.getNullTransitions());
                     // add a null transition between the accept state of e1 and the start state of e2
@@ -92,7 +108,7 @@ public class NFABuilder {
                     } else {
                         nullTransitions.get(e1AcceptState).add(e2StartState);
                     }
-                    fragment = new Fragment(states, acceptState, transitions, nullTransitions, startState);
+                    fragment = new Fragment(states, startState, acceptState, transitions, nullTransitions, anyCharTransitions);
                     // push the resulting fragment onto the stack
                     stack.push(fragment);
                     break;
@@ -109,6 +125,8 @@ public class NFABuilder {
                     states.addAll(e2.getStates());
                     transitions = e1.getTransitions();
                     transitions.putAll(e2.getTransitions());
+                    anyCharTransitions = e1.getAnyCharTransitions();
+                    anyCharTransitions.putAll(e2.getAnyCharTransitions());
                     nullTransitions = e1.getNullTransitions();
                     nullTransitions.putAll(e2.getNullTransitions());
                     // create new null transitions from the new start state to start states of e1 and e2
@@ -126,7 +144,7 @@ public class NFABuilder {
                     } else {
                         nullTransitions.get(e2.getAcceptState()).add(acceptState);
                     }
-                    fragment = new Fragment(states, acceptState, transitions, nullTransitions, startState);
+                    fragment = new Fragment(states, startState, acceptState, transitions, nullTransitions, anyCharTransitions);
 
                     // push the resulting fragment onto the stack
                     stack.push(fragment);
@@ -143,6 +161,7 @@ public class NFABuilder {
                     states.add(acceptState);
                     transitions = e.getTransitions();
                     nullTransitions = e.getNullTransitions();
+                    anyCharTransitions = e.getAnyCharTransitions();
                     // add a null transition from the new start state to the start state of e and the new accept state
                     nullTransitions.put(startState, new HashSet<>(List.of(e.getStartState(), acceptState)));
 
@@ -154,7 +173,7 @@ public class NFABuilder {
                     } else {
                         nullTransitions.get(e.getAcceptState()).add(patchState);
                     }
-                    fragment = new Fragment(states, acceptState, transitions, nullTransitions, startState);
+                    fragment = new Fragment(states, startState, acceptState, transitions, nullTransitions, anyCharTransitions);
 
                     // push the resulting fragment onto the stack
                     stack.push(fragment);
@@ -169,6 +188,7 @@ public class NFABuilder {
                     states.add(startState);
                     states.add(acceptState);
                     transitions = e.getTransitions();
+                    anyCharTransitions = e.getAnyCharTransitions();
                     nullTransitions = e.getNullTransitions();
                     // add new null transitions from the start state to the start state of e
                     // and from the accept state of e to the new accept state
@@ -181,7 +201,7 @@ public class NFABuilder {
                     } else {
                         nullTransitions.get(e.getAcceptState()).add(acceptState);
                     }
-                    fragment = new Fragment(states, acceptState, transitions, nullTransitions, startState);
+                    fragment = new Fragment(states, startState, acceptState, transitions, nullTransitions, anyCharTransitions);
 
                     // push the resulting fragment onto the stack
                     stack.push(fragment);
@@ -192,10 +212,11 @@ public class NFABuilder {
         Fragment finalFragment = stack.pop();
         // create a new state machine using info from the final fragment
         return new StateMachine(finalFragment.getStates(),
+                new HashSet<>(Collections.singleton(finalFragment.getStartState())),
                 new HashSet<>(Collections.singleton(finalFragment.getAcceptState())),
                 finalFragment.getTransitions(),
                 finalFragment.getNullTransitions(),
-                new HashSet<>(Collections.singleton(finalFragment.getStartState())));
+                finalFragment.getAnyCharTransitions());
     }
 
 }
