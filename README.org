@@ -12,7 +12,7 @@ It supports the following standard metacharacters:
 - The union operator ~|~, which means “either the preceding or the following character/group”.
 - Left and right parentheses ~(~ and ~)~, which are used for character grouping (exactly the same way as in mathematical notation).
 
-To use a metacharacter as a standard character, escape it with a ~\~ (backslash). For example, ~\?~ matches a literal question mark, and ~\.~ matches a literal full stop.
+To use a metacharacter as a standard character, escape it with a ~\~ (backslash). For example, ~\?~ matches a literal question mark, and ~\.~ matches a literal full stop. Naturally, to match a backslash, use two backslashes ~\\~ in your pattern.
 
 This matcher is written as a proof of concept (or, more precisely, as a proof that I can write something like this from scratch), so it does not support more advanced features like character classes and backreferences.
 
