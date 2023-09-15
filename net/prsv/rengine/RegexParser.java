@@ -73,24 +73,22 @@ public class RegexParser {
         }
 
         List<RToken> tokens = new ArrayList<>();
-
-        // insert explicit concatenation tokens
         int i = 0;
         while (i < temporaryTokenStream.size()) {
             RToken t = temporaryTokenStream.get(i);
             if (t.type == RTokenType.RANGE_START) {
-                // search for RANGE_END
+                int rangeBeginPos = i; // remember the starting position
                 int rangeEndPos = -1;
+                // search for RANGE_END
                 for (int k = 1; k < temporaryTokenStream.size() - i; k++) {
                     if (temporaryTokenStream.get(i + k).type == RTokenType.RANGE_END) {
                         rangeEndPos = i + k;
                         break;
                     }
                 }
-                if (rangeEndPos == -1) {
+                if (rangeEndPos == -1) { // RANGE_END not found => invalid pattern
                     throw new IllegalArgumentException("Invalid pattern: unbalanced '['");
                 }
-                int rangeBeginPos = i;
                 tokens.add(new RToken(RTokenType.L_PAR, '('));
                 i += 1;
                 RToken next, prev, current;
@@ -116,14 +114,14 @@ public class RegexParser {
                 if (tokens.get(tokens.size() - 1).type == RTokenType.UNION) {
                     tokens.remove(tokens.size() - 1);
                 }
-                tokens.add(new RToken(RTokenType.R_PAR, ')'));
-            } else {
-                tokens.add(t);
+                t = new RToken(RTokenType.R_PAR, ')');
             }
+            tokens.add(t);
+            // insert explicit concatenation tokens
             if (i + 1 < temporaryTokenStream.size()) {
                 RToken t2 = temporaryTokenStream.get(i + 1);
                 if (t.type != RTokenType.L_PAR && t.type != RTokenType.UNION
-                        && (t2.type == RTokenType.LITERAL || t2.type == RTokenType.L_PAR || t2.type == RTokenType.ANY_CHAR)) {
+                        && (t2.type == RTokenType.LITERAL || t2.type == RTokenType.L_PAR || t2.type == RTokenType.RANGE_START || t2.type == RTokenType.ANY_CHAR)) {
                     tokens.add(new RToken(RTokenType.CONCAT, '&'));
                 }
             }
