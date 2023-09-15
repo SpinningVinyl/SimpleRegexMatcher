@@ -10,7 +10,7 @@ It supports the following standard metacharacters:
 - The ~+~ character, which means “one or more of the preceding character/group”.
 - The ~?~ character, which means “zero or one of the preceding character/group”.
 - The union operator ~|~, which means “either the preceding or the following character/group”.
-- Left and right brackets ~[~ and ~]~, which are used for specifying character ranges (e.g. ~[aA]~ would match either ~a~ or ~A~, and ~[a-z]~ would match any character between ~a~ and ~z~).
+- Left and right brackets ~[~ and ~]~, which are used for specifying character groups and ranges (e.g. ~[aA]~ would match either ~a~ or ~A~, and ~[a-z]~ would match any character between ~a~ and ~z~).
 - Left and right parentheses ~(~ and ~)~, which are used for character grouping (exactly the same way as in mathematical notation).
 
 To use a metacharacter as a standard character, escape it with a ~\~ (backslash). For example, ~\?~ matches a literal question mark, and ~\.~ matches a literal full stop. Naturally, to match a backslash, use two backslashes ~\\~ in your pattern.
