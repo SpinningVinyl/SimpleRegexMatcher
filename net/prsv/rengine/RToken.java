@@ -5,8 +5,10 @@ public class RToken {
     public enum RTokenType {
         LITERAL,
         ANY_CHAR,
-        LPAR,
-        RPAR,
+        L_PAR,
+        R_PAR,
+        RANGE_START,
+        RANGE_END,
         UNION,
         CONCAT,
         QMARK,
