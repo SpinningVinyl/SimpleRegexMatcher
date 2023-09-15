@@ -101,21 +101,21 @@ public class RegexParser {
                         next = temporaryTokenStream.get(i + 1);
                         char fromChar = prev.literal;
                         char toChar = next.literal;
-                        for (char c = fromChar; c < toChar; c++) {
+                        for (char c = fromChar; c <= toChar; c++) {
                             tokens.add(new RToken(RTokenType.LITERAL, c));
                             tokens.add(new RToken(RTokenType.UNION, '|'));
                         }
-                        tokens.add(new RToken(RTokenType.LITERAL, toChar));
                         i += 1;
                     } else {
                         tokens.add(current);
-                        if (i + 1 < rangeEndPos) {
-                            tokens.add(new RToken(RTokenType.UNION, '|'));
-                        }
+                        tokens.add(new RToken(RTokenType.UNION, '|'));
                     }
                     i += 1;
                 }
-
+                // if the last token before the closing bracket is a union, remove it
+                if (tokens.get(tokens.size() - 1).type == RTokenType.UNION) {
+                    tokens.remove(tokens.size() - 1);
+                }
                 tokens.add(new RToken(RTokenType.R_PAR, ')'));
             } else {
                 tokens.add(t);
