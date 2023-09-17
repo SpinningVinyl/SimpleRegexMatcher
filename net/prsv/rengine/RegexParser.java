@@ -75,6 +75,11 @@ public class RegexParser {
         List<RToken> tokens = new ArrayList<>();
         int i = 0;
         while (i < temporaryTokenStream.size()) {
+
+            /*
+             * The parser handles character ranges by transforming them into groups/unions:
+             * e.g. [abc] is transformed into (a|b|c) and [a-e] is transformed into (a|b|c|d|e)
+             */
             RToken t = temporaryTokenStream.get(i);
             if (t.type == RTokenType.RANGE_START) {
                 int rangeBeginPos = i; // remember the starting position
@@ -89,11 +94,14 @@ public class RegexParser {
                 if (rangeEndPos == -1) { // RANGE_END not found => invalid pattern
                     throw new IllegalArgumentException("Invalid pattern: unbalanced '['");
                 }
+                // open the bracket
                 tokens.add(new RToken(RTokenType.L_PAR, '('));
                 i += 1;
                 RToken next, prev, current;
                 while (i < rangeEndPos) {
                     current = temporaryTokenStream.get(i);
+                    // the hyphen is treated as a metacharacter only if it's not the first or the last
+                    // character in the range
                     if (current.literal == '-' && i + 1 < rangeEndPos && i - 1 > rangeBeginPos) {
                         prev = temporaryTokenStream.get(i - 1);
                         next = temporaryTokenStream.get(i + 1);
@@ -114,6 +122,7 @@ public class RegexParser {
                 if (tokens.get(tokens.size() - 1).type == RTokenType.UNION) {
                     tokens.remove(tokens.size() - 1);
                 }
+                // close the bracket
                 t = new RToken(RTokenType.R_PAR, ')');
             }
             tokens.add(t);
