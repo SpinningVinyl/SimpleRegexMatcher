@@ -1,5 +1,7 @@
 package net.prsv.rengine;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -67,11 +69,22 @@ public class StateMachine {
 
     private HashSet<String> followNullTransitions(String state) {
         HashSet<String> result = new HashSet<>();
-        if (nullTransitions.containsKey(state)) {
-            result.addAll(nullTransitions.get(state));
-            for (String s : nullTransitions.get(state)) {
-                result.addAll(followNullTransitions(s));
+        HashSet<String> visited = new HashSet<>();
+        Deque<String> candidates = new ArrayDeque<>();
+        for (String s : nullTransitions.get(state)) {
+            candidates.push(s);
+        }
+        while(!candidates.isEmpty()) {
+            String candidate = candidates.pop();
+            if (!visited.add(candidate)) continue;
+            if (nullTransitions.containsKey(candidate)) {
+                for (String nextState : nullTransitions.get(candidate)) {
+                    if (!visited.contains(nextState)) {
+                        candidates.push(nextState);
+                    }
+                }
             }
+            result.add(candidate);
         }
         return result;
     }
