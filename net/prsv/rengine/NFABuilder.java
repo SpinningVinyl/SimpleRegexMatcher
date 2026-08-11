@@ -86,6 +86,9 @@ public class NFABuilder {
                     break;
                 case CONCAT:
                     // pop two fragments from the stack
+                    if (stack.size() < 2) {
+                        throw new IllegalArgumentException("Compilation error: CONCAT requires two operands");
+                    }
                     e2 = stack.pop();
                     e1 = stack.pop();
                     // states = all states from e1 and e2
@@ -114,6 +117,9 @@ public class NFABuilder {
                     break;
                 case UNION:
                     // pop two fragments from the stack
+                    if (stack.size() < 2) {
+                        throw new IllegalArgumentException("Compilation error: UNION requires two operands");
+                    }
                     e2 = stack.pop();
                     e1 = stack.pop();
                     // create a new start state and a new accept state
@@ -152,6 +158,11 @@ public class NFABuilder {
                 case QMARK:
                 case STAR:
                     // pop a fragment from the stack
+                    if (stack.isEmpty()) {
+                        throw new IllegalArgumentException("Compilation error: " +
+                                ((t.type == RToken.RTokenType.QMARK) ? "QMARK" : "STAR") +
+                                " requires an operand");
+                    }
                     e = stack.pop();
                     // create a new start state and a new accept state
                     startState = "q" + stateCounter++;
@@ -180,6 +191,9 @@ public class NFABuilder {
                     break;
                 case PLUS:
                     // pop a fragment from the stack
+                    if (stack.isEmpty()) {
+                        throw new IllegalArgumentException("Compilation error: PLUS requires an operand");
+                    }
                     e = stack.pop();
                     // create a new start state and a new accept state
                     startState = "q" + stateCounter++;
@@ -208,7 +222,9 @@ public class NFABuilder {
                     break;
             }
         }
-        assert(stack.size() == 1); // in the end there should be only one fragment left on the stack
+        if (stack.size() != 1) {
+            throw new IllegalArgumentException("Compilation error: malformed regex pattern");
+        }
         Fragment finalFragment = stack.pop();
         // create a new state machine using info from the final fragment
         return new StateMachine(finalFragment.getStates(),

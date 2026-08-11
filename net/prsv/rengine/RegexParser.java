@@ -38,7 +38,7 @@ public class RegexParser {
     public static List<RToken> tokenize(String pattern) {
 
         if (pattern == null) {
-            throw new IllegalArgumentException("Regex parser: pattern can't be null");
+            throw new IllegalArgumentException("Parsing error: pattern can't be null");
         }
 
         ArrayList<RToken> temporaryTokenStream = new ArrayList<>();
@@ -68,77 +68,83 @@ public class RegexParser {
                 // if not a special character -- create a literal token
                 token = new RToken(specialChars.getOrDefault(c, RTokenType.LITERAL), c);
             }
-            temporaryTokenStream.add(token);
+            if (token != null) {
+                temporaryTokenStream.add(token);
+            }
             position = position + 1;
         }
 
+        boolean inRange = false;
         List<RToken> tokens = new ArrayList<>();
-        int i = 0;
-        while (i < temporaryTokenStream.size()) {
+        int idx = 0;
 
-            /*
-             * The parser handles character ranges by transforming them into groups/unions:
-             * e.g. [abc] is transformed into (a|b|c) and [a-e] is transformed into (a|b|c|d|e)
-             */
-            RToken t = temporaryTokenStream.get(i);
+        /*
+         * The parser handles character ranges by transforming them into groups/unions:
+         * e.g. [abc] is transformed into (a|b|c) and [a-e] is transformed into (a|b|c|d|e)
+         */
+        while (idx < temporaryTokenStream.size()) {
+            RToken t = temporaryTokenStream.get(idx);
             if (t.type == RTokenType.RANGE_START) {
-                int rangeBeginPos = i; // remember the starting position
-                int rangeEndPos = -1;
-                // search for RANGE_END
-                for (int k = 1; k < temporaryTokenStream.size() - i; k++) {
-                    if (temporaryTokenStream.get(i + k).type == RTokenType.RANGE_END) {
-                        rangeEndPos = i + k;
-                        break;
-                    }
+                if (inRange) {
+                    throw new IllegalArgumentException("Parsing error: unbalanced [");
                 }
-                if (rangeEndPos == -1) { // RANGE_END not found => invalid pattern
-                    throw new IllegalArgumentException("Invalid pattern: unbalanced '['");
-                }
-                // open the bracket
+                inRange = true;
+                // create the bracket/union expression
                 tokens.add(new RToken(RTokenType.L_PAR, '('));
-                i += 1;
-                RToken next, prev, current;
-                while (i < rangeEndPos) {
-                    current = temporaryTokenStream.get(i);
-                    // the hyphen is treated as a metacharacter only if it's not the first or the last
-                    // character in the range
-                    if (current.literal == '-' && i + 1 < rangeEndPos && i - 1 > rangeBeginPos) {
-                        prev = temporaryTokenStream.get(i - 1);
-                        next = temporaryTokenStream.get(i + 1);
-                        char fromChar = prev.literal;
-                        char toChar = next.literal;
-                        for (char c = fromChar; c <= toChar; c++) {
-                            tokens.add(new RToken(RTokenType.LITERAL, c));
-                            tokens.add(new RToken(RTokenType.UNION, '|'));
-                        }
-                        i += 1;
-                    } else {
-                        tokens.add(current);
-                        tokens.add(new RToken(RTokenType.UNION, '|'));
-                    }
-                    i += 1;
+            } else if (t.type == RTokenType.RANGE_END) {
+                if (!inRange) {
+                    throw new IllegalArgumentException("Parsing error: unbalanced ]");
                 }
+                inRange = false;
                 // if the last token before the closing bracket is a union, remove it
                 if (tokens.get(tokens.size() - 1).type == RTokenType.UNION) {
                     tokens.remove(tokens.size() - 1);
                 }
                 // close the bracket
                 t = new RToken(RTokenType.R_PAR, ')');
+                tokens.add(t);
+            } else if (inRange) {
+                if (t.literal == '-' && idx > 0 && idx + 1 < temporaryTokenStream.size()) {
+                    RToken next = temporaryTokenStream.get(idx + 1);
+                    RToken prev = temporaryTokenStream.get(idx - 1);
+                    if (next.type != RTokenType.RANGE_END && prev.type != RTokenType.RANGE_START) {
+                        char fromChar = prev.literal;
+                        char toChar = next.literal;
+                        if (fromChar > toChar) {
+                            throw new IllegalArgumentException("Parsing error: invalid range " + fromChar + "-" + toChar);
+                        }
+                        for (int code = fromChar; code <= toChar; code++) { // use int to prevent overflow
+                            tokens.add(new RToken(RTokenType.LITERAL, (char) code));
+                            tokens.add(new RToken(RTokenType.UNION, '|'));
+                        }
+                        idx += 1;
+                    } else {
+                        tokens.add(t);
+                        tokens.add(new RToken(RTokenType.UNION, '|'));
+                    }
+                } else {
+                    tokens.add(new RToken(RTokenType.LITERAL, t.literal));
+                    tokens.add(new RToken(RTokenType.UNION, '|'));
+                }
+            } else {
+                tokens.add(t);
             }
-            tokens.add(t);
             // insert explicit concatenation tokens
-            if (i + 1 < temporaryTokenStream.size()) {
-                RToken t2 = temporaryTokenStream.get(i + 1);
+            if (!inRange && idx + 1 < temporaryTokenStream.size()) {
+                RToken t2 = temporaryTokenStream.get(idx + 1);
                 if (t.type != RTokenType.L_PAR && t.type != RTokenType.UNION
                         && (t2.type == RTokenType.LITERAL || t2.type == RTokenType.L_PAR || t2.type == RTokenType.RANGE_START || t2.type == RTokenType.ANY_CHAR)) {
                     tokens.add(new RToken(RTokenType.CONCAT, '&'));
                 }
             }
-            i += 1;
+            idx += 1;
+        }
+
+        if (inRange) {
+            throw new IllegalArgumentException("Parsing error: unbalanced [");
         }
 
         return tokens;
-
     }
 
     public static List<RToken> infixToPostfix(List<RToken> tokens) {
@@ -156,7 +162,9 @@ public class RegexParser {
                     break;
                 case R_PAR:
                     while (true) {
-                        assert stack.peek() != null;
+                        if (stack.peek() == null) {
+                            throw new IllegalArgumentException("Parsing error: unbalanced parentheses");
+                        }
                         if (stack.peek().type.equals(RTokenType.L_PAR)) break;
                         postfixStream.add(stack.pop());
                     }
@@ -164,7 +172,7 @@ public class RegexParser {
                     break;
 
                 default:
-                    while (stack.size() > 0) {
+                    while (!stack.isEmpty()) {
                         RToken topToken = stack.peek();
                         if (precedence.get(topToken.type) >= precedence.get(t.type)) {
                             postfixStream.add(stack.pop());
@@ -177,8 +185,12 @@ public class RegexParser {
             }
         }
 
-        while (stack.size() > 0) {
-            postfixStream.add(stack.pop());
+        while (!stack.isEmpty()) {
+            RToken token = stack.pop();
+            if (token.type == RTokenType.L_PAR) {
+                throw new IllegalArgumentException("Parsing error: unbalanced parentheses");
+            }
+            postfixStream.add(token);
         }
         return postfixStream;
     }
