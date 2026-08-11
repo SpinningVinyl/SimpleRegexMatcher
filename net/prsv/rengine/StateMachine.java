@@ -1,9 +1,11 @@
 package net.prsv.rengine;
 
 import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class StateMachine {
     private final HashSet<String> states;
@@ -29,27 +31,44 @@ public class StateMachine {
     }
 
     public String config() {
+        Comparator<String> stateOrder = Comparator.comparingInt(
+                state -> Integer.parseInt(state.substring(1))
+        );
         StringBuilder sb = new StringBuilder();
         sb.append("===== NFA configuration =====\n");
         sb.append("States: ");
-        states.forEach(state -> sb.append(state).append(" "));
+        states.stream()
+                .sorted(stateOrder)
+                .forEach(state -> sb.append(state).append(" "));
         sb.append("\nStart states: ");
-        startStates.forEach(state -> sb.append(state).append(" "));
+        startStates.stream()
+                .sorted(stateOrder)
+                .forEach(state -> sb.append(state).append(" "));
         sb.append("\nAccept states: ");
-        acceptStates.forEach(state -> sb.append(state).append(" "));
+        acceptStates.stream()
+                .sorted(stateOrder)
+                .forEach(state -> sb.append(state).append(" "));
         sb.append("\nTransitions:\n");
-        transitions.keySet().forEach(key -> {
-            sb.append("(").append(key).append(") -> ");
-            transitions.get(key).forEach(state -> sb.append(state).append(" "));
-            sb.append("\n");
-        });
+        transitions.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    sb.append("(").append(entry.getKey()).append(") -> ");
+                    entry.getValue().stream()
+                            .sorted(stateOrder)
+                            .forEach(state -> sb.append(state).append(" "));
+                    sb.append("\n");
+                });
         if (!nullTransitions.isEmpty()) {
             sb.append("\nNull transitions:\n");
-            nullTransitions.keySet().forEach(key -> {
-                sb.append(key).append(" -> ");
-                nullTransitions.get(key).forEach(state -> sb.append(state).append(" "));
-                sb.append("\n");
-            });
+            nullTransitions.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey(stateOrder))
+                    .forEach(entry -> {
+                        sb.append(entry.getKey()).append(" -> ");
+                        entry.getValue().stream()
+                                .sorted(stateOrder)
+                                .forEach(state -> sb.append(state).append(" "));
+                        sb.append("\n");
+                    });
         }
         return sb.toString();
     }

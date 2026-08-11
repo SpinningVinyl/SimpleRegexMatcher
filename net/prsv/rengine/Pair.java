@@ -25,6 +25,11 @@ public class Pair implements Comparable<Pair> {
     }
 
     @Override
+    public String toString() {
+        return this.state + ", " + this.symbol;
+    }
+
+    @Override
     public int compareTo(Pair other) {
         int stateComparison = Integer.compare(
                 stateNumber(this.state),
