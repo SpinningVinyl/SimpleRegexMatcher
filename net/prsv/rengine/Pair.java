@@ -2,13 +2,13 @@ package net.prsv.rengine;
 
 import java.util.Objects;
 
-public class Pair {
+public class Pair implements Comparable<Pair> {
     private final String state;
     private final Character symbol;
 
     public Pair(String state, Character symbol) {
-        this.state = state;
-        this.symbol = symbol;
+        this.state = Objects.requireNonNull(state);
+        this.symbol = Objects.requireNonNull(symbol);
     }
 
     @Override
@@ -25,7 +25,24 @@ public class Pair {
     }
 
     @Override
-    public String toString() {
-        return state + "," + symbol;
+    public int compareTo(Pair other) {
+        int stateComparison = Integer.compare(
+                stateNumber(this.state),
+                stateNumber(other.state)
+        );
+
+        if (stateComparison != 0) {
+            return stateComparison;
+        }
+
+        return Character.compare(this.symbol, other.symbol);
+    }
+
+    private static int stateNumber(String state) {
+        if (state.length() < 2 || state.charAt(0) != 'q') {
+            throw new IllegalArgumentException("Invalid state name: " + state);
+        }
+
+        return Integer.parseInt(state.substring(1));
     }
 }
