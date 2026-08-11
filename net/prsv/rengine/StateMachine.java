@@ -90,12 +90,12 @@ public class StateMachine {
     }
 
     public boolean run(String input) {
-
         // if any of the start states have null transitions defined,
-        // add them to the start states recursively
+        // add them to the working set
+        HashSet<String> withNullTransitions = new HashSet<>();
         for (String startState: startStates) {
             if (nullTransitions.containsKey(startState)) {
-                startStates.addAll(followNullTransitions(startState));
+                withNullTransitions.addAll(followNullTransitions(startState));
             }
         }
 
@@ -103,6 +103,7 @@ public class StateMachine {
 //        startStates.forEach(state -> System.out.print(state + " "));
 //        System.out.println();
         HashSet<String> currentStates = new HashSet<>(startStates);
+        currentStates.addAll(withNullTransitions);
         if(!input.equals("")) {
             for (int i = 0; i < input.length(); i++) {
 
@@ -124,7 +125,7 @@ public class StateMachine {
                     }
                 }
                 // if any of the current states have null transitions defined,
-                // add them to the current states recursively
+                // add them to the current states
                 HashSet<String> tmp = new HashSet<>();
                 for (String state : newStates) {
                     if (nullTransitions.containsKey(state)) {
