@@ -18,6 +18,7 @@ public class RegexParser {
         precedence.put(RTokenType.QMARK, 4);
         precedence.put(RTokenType.STAR, 4);
         precedence.put(RTokenType.PLUS, 4);
+        precedence.put(RTokenType.QUANTIFIER, 4);
 
         // populate the special character map
         specialChars.put('(', RTokenType.L_PAR);
