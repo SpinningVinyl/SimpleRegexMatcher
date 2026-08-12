@@ -36,6 +36,42 @@ public class RegexParser {
     private RegexParser () {
     }
 
+    public static RToken parseQuantExpression(CharSequence quantExpression) {
+        String qe = quantExpression.toString().strip();
+        int min;
+        int max;
+        if (qe.isEmpty()) {
+            throw new IllegalArgumentException(String.format("Invalid quantifier format: {%s}", qe));
+        }
+        if (qe.charAt(qe.length() - 1) == '+') {
+            try {
+                min = Integer.parseInt(qe.substring(0, qe.length() - 1));
+                max = -1;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(String.format("Invalid quantifier format: {%s}", qe));
+            }
+        } else if (qe.indexOf('-') != -1) {
+            String[] shards = qe.split("-", -1);
+            if (shards.length != 2) {
+                throw new IllegalArgumentException(String.format("Invalid quantifier format: {%s}", qe));
+            }
+            try {
+                min = Integer.parseInt(shards[0]);
+                max = Integer.parseInt(shards[1]);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(String.format("Invalid quantifier format: {%s}", qe));
+            }
+        } else {
+            try {
+                min = Integer.parseInt(qe);
+                max = min;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(String.format("Invalid quantifier format: {%s}", qe));
+            }
+        }
+        return new RToken(min, max);
+    }
+
     public static List<RToken> tokenize(String pattern) {
 
         if (pattern == null) {
@@ -45,6 +81,7 @@ public class RegexParser {
         ArrayList<RToken> temporaryTokenStream = new ArrayList<>();
 
         int position = 0;
+        boolean inBrackets = false;
 
         // go over the whole pattern and tokenize it
         while (position < pattern.length()) {
@@ -57,19 +94,31 @@ public class RegexParser {
                 if (position + 1 < pattern.length()) {
                     char c2 = pattern.charAt(position + 1);
                     // if the next character in the pattern is a special character or another slash, 
-                    if (specialChars.containsKey(c2) || c2 == c) {
+                    if (specialChars.containsKey(c2) || c2 == c || c2 == '{' || c2 == '}') {
                         // create a new literal token and skip the next character
                         token = new RToken(RTokenType.LITERAL, c2);
                         position = position + 1;
                     }
                 // otherwise do nothing -- swallow the backslash
                 }
+            } else if (c == '{' && !inBrackets) { // parse quantifiers
+                int quantEnd = pattern.indexOf('}', position + 1);
+                if (quantEnd == -1) {
+                    throw new IllegalArgumentException("Parsing error: unbalanced {");
+                }
+                token = parseQuantExpression(pattern.subSequence(position + 1, quantEnd));
+                position = quantEnd;
+            } else if (c == '}' && !inBrackets) {
+                throw new IllegalArgumentException("Parsing error: unbalanced }");
             } else {
                 // if a special character -- create an operator token
                 // if not a special character -- create a literal token
                 token = new RToken(specialChars.getOrDefault(c, RTokenType.LITERAL), c);
             }
             if (token != null) {
+                if (token.type == RTokenType.RANGE_START || token.type == RTokenType.RANGE_END) {
+                    inBrackets = !inBrackets;
+                }
                 temporaryTokenStream.add(token);
             }
             position = position + 1;
