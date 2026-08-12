@@ -11,6 +11,14 @@ public class Pair implements Comparable<Pair> {
         this.symbol = Objects.requireNonNull(symbol);
     }
 
+    public String getState() {
+        return state;
+    }
+
+    public Character getSymbol() {
+        return symbol;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(state, symbol);

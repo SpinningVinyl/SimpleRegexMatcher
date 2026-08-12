@@ -9,6 +9,7 @@ It supports the following standard metacharacters:
 - Kleene star ~*~, which means “zero or more of the preceding character/group”.
 - The ~+~ character, which means “one or more of the preceding character/group”.
 - The ~?~ character, which means “zero or one of the preceding character/group”.
+- Explicit quantifiers: ~{n}~ for exactly ~n~ repetitions, ~{n-m}~ for between ~n~ and ~m~ repetitions, and ~{n+}~ for ~n~ or more repetitions.
 - The union operator ~|~, which means “either the preceding or the following character/group”.
 - Left and right brackets ~[~ and ~]~, which are used for specifying character groups and ranges (e.g. ~[aA]~ would match either ~a~ or ~A~, and ~[a-z]~ would match any character between ~a~ and ~z~).
 - Left and right parentheses ~(~ and ~)~, which are used for character grouping (exactly the same way as in mathematical notation).
