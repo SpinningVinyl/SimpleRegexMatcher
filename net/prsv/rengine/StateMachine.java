@@ -164,4 +164,8 @@ public class StateMachine {
         return result;
     }
 
+    public static StateMachine compile(String input) {
+        return NFABuilder.build(RegexParser.infixToPostfix(RegexParser.tokenize(input)));
+    }
+
 }

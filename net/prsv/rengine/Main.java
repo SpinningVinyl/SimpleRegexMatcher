@@ -20,8 +20,8 @@ public class Main {
             }
             input = s.nextLine();
             try {
-                Main.machine = NFABuilder.build(RegexParser.infixToPostfix(RegexParser.tokenize(input)));
-                Main.pattern = input;
+                machine = StateMachine.compile(input);
+                pattern = input;
                 isValid = true;
             } catch (Exception e) {
                 System.out.println(e.getMessage());
