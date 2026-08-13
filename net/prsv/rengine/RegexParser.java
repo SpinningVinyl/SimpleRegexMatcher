@@ -72,6 +72,13 @@ public class RegexParser {
         return new RToken(min, max);
     }
 
+    private static boolean isRepetitionOperator(RTokenType type) {
+        return type == RTokenType.QMARK
+                || type == RTokenType.STAR
+                || type == RTokenType.PLUS
+                || type == RTokenType.QUANTIFIER;
+    }
+
     public static List<RToken> tokenize(String pattern) {
 
         if (pattern == null) {
@@ -192,6 +199,15 @@ public class RegexParser {
 
         if (inRange) {
             throw new IllegalArgumentException("Parsing error: unbalanced [");
+        }
+
+        for (int i = 1; i < tokens.size(); i++) {
+            if (isRepetitionOperator(tokens.get(i - 1).type)
+                    && isRepetitionOperator(tokens.get(i).type)) {
+                throw new IllegalArgumentException(
+                        "Parsing error: adjacent repetition operators require grouping"
+                );
+            }
         }
 
         return tokens;

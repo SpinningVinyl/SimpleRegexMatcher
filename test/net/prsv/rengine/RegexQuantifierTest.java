@@ -9,16 +9,10 @@ public final class RegexQuantifierTest {
     private RegexQuantifierTest() {
     }
 
-    private static StateMachine compile(String pattern) {
-        return NFABuilder.build(
-                RegexParser.infixToPostfix(RegexParser.tokenize(pattern))
-        );
-    }
-
     private static void assertMatches(String pattern,
                                       String[] accepted,
                                       String[] rejected) {
-        StateMachine machine = compile(pattern);
+        StateMachine machine = StateMachine.compile(pattern);
         for (String input : accepted) {
             assertions++;
             if (!machine.run(input)) {
@@ -56,7 +50,7 @@ public final class RegexQuantifierTest {
     private static void assertCompilationFails(String pattern) {
         assertions++;
         try {
-            compile(pattern);
+            StateMachine.compile(pattern);
             throw new AssertionError("Expected compilation to fail for: " + pattern);
         } catch (IllegalArgumentException expected) {
             // Expected.
@@ -67,8 +61,8 @@ public final class RegexQuantifierTest {
                                                        String rightPattern,
                                                        String alphabet,
                                                        int maximumLength) {
-        StateMachine left = compile(leftPattern);
-        StateMachine right = compile(rightPattern);
+        StateMachine left = StateMachine.compile(leftPattern);
+        StateMachine right = StateMachine.compile(rightPattern);
         compareInputs(leftPattern, rightPattern, left, right, alphabet, "", maximumLength);
     }
 
@@ -179,7 +173,7 @@ public final class RegexQuantifierTest {
         assertMatches("(ab+){2}",
                 new String[]{"abab", "abbabbb", "abbbbbab"},
                 new String[]{"", "ab", "aba", "abba"});
-        assertMatches("a{2}{3}",
+        assertMatches("(a{2}){3}",
                 new String[]{"aaaaaa"},
                 new String[]{"", "aa", "aaa", "aaaaaaaa"});
         assertMatches(".{3}",
@@ -222,6 +216,13 @@ public final class RegexQuantifierTest {
         assertCompilationFails("a{2");
         assertCompilationFails("a2}");
         assertCompilationFails("a{2147483648}");
+        assertCompilationFails("a?{2}");
+        assertCompilationFails("a*{50}");
+        assertCompilationFails("a+{10}");
+        assertCompilationFails("a{2}{3}");
+        assertCompilationFails("a{2}*");
+        assertCompilationFails("a**");
+        assertCompilationFails("a?+");
     }
 
     private static void testExpansionEquivalenceExhaustively() {
